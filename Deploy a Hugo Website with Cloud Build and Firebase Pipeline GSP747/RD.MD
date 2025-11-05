@@ -1,9 +1,9 @@
 
 
-<h1 align="center">🌐 Debug Apps on Google Kubernetes Engine — GSP736 🚀</h1>
+<h1 align="center">🌐 Deploy a Hugo Website with Cloud Build and Firebase Pipeline GSP747 🚀</h1>
 
 <p align="center">
-  <a href="https://www.skills.google/games/6878/labs/42715">
+  <a href="https://www.skills.google/games/6878/labs/42716">
     <img src="https://img.shields.io/badge/Open%20Lab-Click%20Here-blue?style=for-the-badge&logo=googlecloud&logoColor=white" alt="Open Lab">
   </a>
 </p>
