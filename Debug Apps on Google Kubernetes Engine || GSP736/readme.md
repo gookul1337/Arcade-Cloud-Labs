@@ -30,7 +30,9 @@ export ZONE=
 ````
 
 ```bash
- curl -LO raw.githubusercontent.com/gookul1337/Arcade-Cloud-Labs/blob/564127703339169ac8e64263eed1cd9d46518fd2/Debug%20Apps%20on%20Google%20Kubernetes%20Engine%20%7C%7C%20GSP736/rcode.sh
+ curl -LO https://raw.githubusercontent.com/gookul1337/Arcade-Cloud-Labs/blob/564127703339169ac8e64263eed1cd9d46518fd2/Debug%20Apps%20on%20Google%20Kubernetes%20Engine%20%7C%7C%20GSP736/rcode.sh
+
+
 sudo chmod +x rcode.sh 
 ./rcode.sh
 ```
