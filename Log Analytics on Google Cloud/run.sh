@@ -93,7 +93,8 @@ echo "${BLUE}${UNDERLINE}https://console.cloud.google.com/logs/storage/bucket?pr
 sleep 1
 
 # 🎉 Completion Banner
-clear
+
+
 echo "${GREEN}${BOLD}"
 echo "╔══════════════════════════════════════════════════════════════════╗"
 echo "║                                                                  ║"
