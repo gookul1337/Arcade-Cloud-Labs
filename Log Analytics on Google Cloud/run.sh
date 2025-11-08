@@ -87,10 +87,6 @@ gcloud logging sinks create day2ops-sink \
     --format='json'
 sleep 2
 
-# 🔗 Display Console Link
-echo "${CYAN}${BOLD}→ Access your Log Bucket here:${RESET}"
-echo "${BLUE}${UNDERLINE}https://console.cloud.google.com/logs/storage/bucket?project=${DEVSHELL_PROJECT_ID}${RESET}"
-sleep 1
 
 # 🎉 Completion Banner
 
