@@ -29,10 +29,8 @@
 export REGION_1=
 export REGION_2=
 export REGION_3=
-```
 
 
-```bash
 curl -LO https://raw.githubusercontent.com/gookul1337/Arcade-Cloud-Labs/refs/heads/main/networking101/r.sh
 sudo chmod +x r.sh 
 ./r.sh
