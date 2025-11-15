@@ -28,9 +28,6 @@
 ```bash
 export REGION=
 
-'''
-
-```bash
 
 curl -LO https://raw.githubusercontent.com/gookul1337/Arcade-Cloud-Labs/refs/heads/main/Build%20a%20Serverless%20App%20with%20Cloud%20Run%20that%20Creates%20PDF%20Files/r.sh
 sudo chmod +x r.sh 
