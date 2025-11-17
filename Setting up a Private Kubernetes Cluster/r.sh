@@ -1,118 +1,148 @@
 #!/bin/bash
 
-# Define color variables
-YELLOW_TEXT=$'\033[0;33m'
-MAGENTA_TEXT=$'\033[0;35m'
-NO_COLOR=$'\033[0m'
-GREEN_TEXT=$'\033[0;32m'
-RED_TEXT=$'\033[0;31m'
-CYAN_TEXT=$'\033[0;36m'
-BOLD_TEXT=$'\033[1m'
-RESET_FORMAT=$'\033[0m'
-BLUE_TEXT=$'\033[0;34m'
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║      🔐 Private GKE Cluster Automation Script — Gokul_1337        ║
+# ║      🧑‍💻 Author : Gokul_1337                                       ║
+# ║      ▶️ YouTube : https://www.youtube.com/@Gokul_1337_ENG          ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
-# Spinner function
-spinner() {
-    local pid=$!
-    local delay=0.1
-    local spinstr='|/-\'
-    while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
-        local temp=${spinstr#?}
-        printf " [%c]  " "$spinstr"
-        local spinstr=$temp${spinstr%"$temp"}
-        sleep $delay
-        printf "\b\b\b\b\b\b"
-    done
-    printf "    \b\b\b\b"
-}
+# 🎨 Color Codes
+YELLOW=$'\033[0;33m'
+MAGENTA=$'\033[0;35m'
+GREEN=$'\033[0;32m'
+RED=$'\033[0;31m'
+CYAN=$'\033[0;36m'
+BLUE=$'\033[0;34m'
+BOLD=$'\033[1m'
+RESET=$'\033[0m'
 
-# Welcome message
 echo
-echo "${CYAN_TEXT}${BOLD_TEXT}╔════════════════════════════════════════════════════════╗${RESET_FORMAT}"
-echo "${CYAN_TEXT}${BOLD_TEXT}                 Welcome to Gokul_1337_ENG               ${RESET_FORMAT}"
-echo "${CYAN_TEXT}${BOLD_TEXT}        YouTube: youtube.com/@Gokul_1337_ENG             ${RESET_FORMAT}"
-echo "${CYAN_TEXT}${BOLD_TEXT}╚════════════════════════════════════════════════════════╝${RESET_FORMAT}"
+echo "${CYAN}${BOLD}🚀 Starting Automated Lab Execution...${RESET}"
 echo
 
-# Use exported ZONE directly
-echo "${GREEN_TEXT}Using Zone: ${ZONE}${RESET_FORMAT}"
-export ZONE=$ZONE
+# -------------------- ZONE & REGION (Pre-export by User) --------------------
+# User sets before running:
+# export ZONE=us-central1-a
+# export REGION=us-central1
 
-# Derive region
-export REGION=${ZONE%-*}
+if [[ -z "$ZONE" ]]; then
+    echo "${RED}${BOLD}ERROR:${RESET} ZONE is not set!"
+    echo "${YELLOW}Please export ZONE before running: ${RESET}"
+    echo "export ZONE=us-central1-a"
+    exit 1
+fi
 
-echo "${BLUE_TEXT}Setting compute zone...${RESET_FORMAT}"
-(gcloud config set compute/zone $ZONE) & spinner
+if [[ -z "$REGION" ]]; then
+    echo "${RED}${BOLD}ERROR:${RESET} REGION is not set!"
+    echo "${YELLOW}Please export REGION before running: ${RESET}"
+    echo "export REGION=us-central1"
+    exit 1
+fi
 
-echo "${BLUE_TEXT}${BOLD_TEXT}Creating private GKE cluster...${RESET_FORMAT}"
-(gcloud beta container clusters create private-cluster \
+echo "${GREEN}Zone  : $ZONE${RESET}"
+echo "${GREEN}Region: $REGION${RESET}"
+echo
+
+gcloud config set compute/zone $ZONE
+
+# ----------------------------- Step 1 ---------------------------------------
+echo "${BLUE}${BOLD}Step 1: Creating Private GKE Cluster...${RESET}"
+
+gcloud beta container clusters create private-cluster \
     --enable-private-nodes \
     --master-ipv4-cidr 172.16.0.16/28 \
     --enable-ip-alias \
-    --create-subnetwork "") & spinner
+    --create-subnetwork ""
 
-echo "${GREEN_TEXT}Private cluster created!${RESET_FORMAT}"
+echo "${GREEN}✔ Private Cluster Created${RESET}"
 echo
 
-echo "${BLUE_TEXT}${BOLD_TEXT}Creating source instance...${RESET_FORMAT}"
-(gcloud compute.instances.create source-instance --zone=$ZONE --scopes 'https://www.googleapis.com/auth/cloud-platform') & spinner
+# ----------------------------- Step 2 ---------------------------------------
+echo "${BLUE}${BOLD}Step 2: Creating Source Instance...${RESET}"
 
-NAT_IAP=$(gcloud compute.instances.describe source-instance --zone=$ZONE | grep natIP | awk '{print $2}')
+gcloud compute instances create source-instance \
+    --zone=$ZONE \
+    --scopes 'https://www.googleapis.com/auth/cloud-platform'
 
-echo "${GREEN_TEXT}Source instance NAT IP: ${NAT_IAP}${RESET_FORMAT}"
+NAT_IAP=$(gcloud compute instances describe source-instance --zone=$ZONE \
+          | grep natIP | awk '{print $2}')
+
+echo "${GREEN}✔ Source Instance NAT IP: $NAT_IAP${RESET}"
 echo
 
-echo "${BLUE_TEXT}${BOLD_TEXT}Updating master-authorized networks...${RESET_FORMAT}"
-(gcloud container clusters.update private-cluster \
+# ----------------------------- Step 3 ---------------------------------------
+echo "${BLUE}${BOLD}Step 3: Allowing Master Authorized Networks...${RESET}"
+
+gcloud container clusters update private-cluster \
     --enable-master-authorized-networks \
-    --master-authorized-networks $NAT_IAP/32) & spinner
+    --master-authorized-networks $NAT_IAP/32
 
-echo "${GREEN_TEXT}Updated successfully!${RESET_FORMAT}"
+echo "${GREEN}✔ Master Authorized Networks Updated${RESET}"
 echo
 
-echo "${BLUE_TEXT}${BOLD_TEXT}Deleting private cluster...${RESET_FORMAT}"
-(gcloud container.clusters.delete private-cluster --zone=$ZONE --quiet) & spinner
+# ----------------------------- Step 4 ---------------------------------------
+echo "${BLUE}${BOLD}Step 4: Deleting Private Cluster...${RESET}"
 
-echo "${GREEN_TEXT}Private cluster deleted!${RESET_FORMAT}"
+gcloud container clusters delete private-cluster \
+    --zone=$ZONE --quiet
+
+echo "${GREEN}✔ Cluster Deleted${RESET}"
 echo
 
-echo "${BLUE_TEXT}${BOLD_TEXT}Creating custom subnet...${RESET_FORMAT}"
-(gcloud compute networks subnets.create my-subnet \
+# ----------------------------- Step 5 ---------------------------------------
+echo "${BLUE}${BOLD}Step 5: Creating Custom Subnet...${RESET}"
+
+gcloud compute networks subnets create my-subnet \
     --network default \
     --range 10.0.4.0/22 \
     --enable-private-ip-google-access \
     --region=$REGION \
-    --secondary-range my-svc-range=10.0.32.0/20,my-pod-range=10.4.0.0/14) & spinner
+    --secondary-range my-svc-range=10.0.32.0/20,my-pod-range=10.4.0.0/14
 
-echo "${GREEN_TEXT}Subnet created!${RESET_FORMAT}"
+echo "${GREEN}✔ Custom Subnet Created${RESET}"
 echo
 
-echo "${BLUE_TEXT}${BOLD_TEXT}Creating second private GKE cluster...${RESET_FORMAT}"
-(gcloud beta container clusters create private-cluster2 \
+# ----------------------------- Step 6 ---------------------------------------
+echo "${BLUE}${BOLD}Step 6: Creating Second Private Cluster...${RESET}"
+
+gcloud beta container clusters create private-cluster2 \
     --enable-private-nodes \
     --enable-ip-alias \
     --master-ipv4-cidr 172.16.0.32/28 \
     --subnetwork my-subnet \
     --services-secondary-range-name my-svc-range \
     --cluster-secondary-range-name my-pod-range \
-    --zone=$ZONE) & spinner
+    --zone=$ZONE
 
-echo "${GREEN_TEXT}Second cluster created!${RESET_FORMAT}"
+echo "${GREEN}✔ Second Private Cluster Created${RESET}"
 echo
 
-NAT_IAP_Cloud=$(gcloud compute.instances.describe source-instance --zone=$ZONE | grep natIP | awk '{print $2}')
+NAT_IAP_2=$(gcloud compute instances describe source-instance --zone=$ZONE \
+            | grep natIP | awk '{print $2}')
 
-echo "${BLUE_TEXT}${BOLD_TEXT}Updating second cluster master-authorized networks...${RESET_FORMAT}"
-(gcloud container clusters.update private-cluster2 \
+echo "${BLUE}${BOLD}Step 7: Updating Master Authorized Networks for Cluster 2...${RESET}"
+
+gcloud container clusters update private-cluster2 \
     --enable-master-authorized-networks \
     --zone=$ZONE \
-    --master-authorized-networks $NAT_IAP_Cloud/32) & spinner
+    --master-authorized-networks $NAT_IAP_2/32
 
-echo "${GREEN_TEXT}Updated successfully!${RESET_FORMAT}"
+echo "${GREEN}✔ Updated for Cluster 2${RESET}"
 echo
 
-echo "${GREEN_TEXT}${BOLD_TEXT}╔════════════════════════════════════════════════════════╗${RESET_FORMAT}"
-echo "${GREEN_TEXT}${BOLD_TEXT}                Lab Completed Successfully!              ${RESET_FORMAT}"
-echo "${GREEN_TEXT}${BOLD_TEXT}╚════════════════════════════════════════════════════════╝${RESET_FORMAT}"
+# ----------------------------- Cleanup Script -------------------------------
+SCRIPT="arcadecrew.sh"
+if [ -f "$SCRIPT" ]; then
+    echo "${RED}${BOLD}Deleting Script for Security: $SCRIPT${RESET}"
+    rm -- "$SCRIPT"
+fi
+
+# ----------------------------- Completed ------------------------------------
 echo
-echo -e "${RED_TEXT}${BOLD_TEXT}Subscribe to my Channel:${RESET_FORMAT} ${BLUE_TEXT}${BOLD_TEXT}https://www.youtube.com/@Gokul_1337_ENG${RESET_FORMAT}"
+echo "${GREEN}${BOLD}=====================================================${RESET}"
+echo "${GREEN}${BOLD}          🎉 LAB COMPLETED SUCCESSFULLY 🎉           ${RESET}"
+echo "${GREEN}${BOLD}=====================================================${RESET}"
+echo
+echo "${CYAN}${BOLD}YouTube: https://www.youtube.com/@Gokul_1337_ENG${RESET}"
+echo "${CYAN}${BOLD}Author : Gokul_1337${RESET}"
+echo
